@@ -1,9 +1,10 @@
-import React from 'react'
-
-export default function page() {
+export default function HomePage () {
   return (
-    <div>
-      <h1 className='text-3xl text-olive-700 underline'>Welcome to the Cafe Shop</h1>
-    </div>
+    <main className='mx-auto max-w-5xl px-4 py-12'>
+      <h1 className='text-3xl font-semibold'>Welcome to the Cafe Shop</h1>
+      <p className='mt-3 max-w-2xl text-gray-700'>
+        Browse products, place orders, and manage payments depending on your role.
+      </p>
+    </main>
   )
 }
