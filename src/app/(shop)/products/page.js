@@ -1,5 +1,10 @@
 import Link from 'next/link'
 import { listProducts } from '@/services/products-service'
+import { formatMoney } from '@/lib/format'
+import { resolveSearchParams } from '@/lib/search-params'
+import ProductOrderButton from './order-button'
+
+export const dynamic = 'force-dynamic'
 
 function normalizeBoolean (value) {
   if (value === 'true') return true
@@ -14,16 +19,14 @@ function normalizeNumber (value, fallback) {
 }
 
 export default async function ProductsPage ({ searchParams }) {
-  const q = typeof searchParams?.q === 'string' ? searchParams.q : undefined
-  const category =
-    typeof searchParams?.category === 'string'
-      ? searchParams.category
-      : undefined
-  const isAvailable = normalizeBoolean(searchParams?.isAvailable)
-  const page = normalizeNumber(searchParams?.page, 0)
-  const size = normalizeNumber(searchParams?.size, 20)
-  const sort =
-    typeof searchParams?.sort === 'string' ? searchParams.sort : 'createdAt,desc'
+  const sp = await resolveSearchParams(searchParams)
+
+  const q = typeof sp.q === 'string' ? sp.q : undefined
+  const category = typeof sp.category === 'string' ? sp.category : undefined
+  const isAvailable = normalizeBoolean(sp.isAvailable)
+  const page = normalizeNumber(sp.page, 0)
+  const size = normalizeNumber(sp.size, 20)
+  const sort = typeof sp.sort === 'string' ? sp.sort : 'createdAt,desc'
 
   const res = await listProducts({ q, category, isAvailable, page, size, sort })
 
@@ -80,7 +83,7 @@ export default async function ProductsPage ({ searchParams }) {
                   </h2>
                   {price !== null && price !== undefined && (
                     <p className='mt-1 text-sm text-gray-600'>
-                      Price: {String(price)}$
+                      {formatMoney(price)}
                     </p>
                   )}
                 </div>
@@ -90,6 +93,10 @@ export default async function ProductsPage ({ searchParams }) {
                   {String(p.description)}
                 </p>
               )}
+              <ProductOrderButton
+                isAvailable={p.isAvailable !== false}
+                productId={id}
+              />
             </li>
           )
         })}

@@ -1,7 +1,10 @@
 import Link from 'next/link'
-import { readAuthCookies } from '@/lib/auth-cookies'
-import { getJwtRolesServer } from '@/lib/jwt-server'
+import { ensureCustomer } from '@/lib/auth-session'
+import { formatDateTime, formatMoney, getOrderStatusLabel } from '@/lib/format'
+import { resolveSearchParams } from '@/lib/search-params'
 import { listMyOrders } from '@/services/orders-service'
+
+export const dynamic = 'force-dynamic'
 
 function normalizeNumber (value, fallback) {
   const n = Number(value)
@@ -10,30 +13,11 @@ function normalizeNumber (value, fallback) {
 }
 
 export default async function MyOrdersPage ({ searchParams }) {
-  const { accessToken } = await readAuthCookies()
-  if (!accessToken) {
-    return (
-      <main className='mx-auto max-w-5xl px-4 py-8'>
-        <h1 className='text-2xl font-semibold'>My orders</h1>
-        <p className='mt-4 text-sm text-gray-700'>
-          Please <Link className='underline' href='/login'>login</Link> to see your orders.
-        </p>
-      </main>
-    )
-  }
+  const sp = await resolveSearchParams(searchParams)
+  const { accessToken } = await ensureCustomer()
 
-  const roles = getJwtRolesServer(accessToken)
-  if (!roles.includes('CUSTOMER')) {
-    return (
-      <main className='mx-auto max-w-5xl px-4 py-8'>
-        <h1 className='text-2xl font-semibold'>My orders</h1>
-        <p className='mt-4 text-sm text-red-600'>Forbidden (CUSTOMER role required)</p>
-      </main>
-    )
-  }
-
-  const page = normalizeNumber(searchParams?.page, 0)
-  const size = normalizeNumber(searchParams?.size, 20)
+  const page = normalizeNumber(sp.page, 0)
+  const size = normalizeNumber(sp.size, 20)
 
   const res = await listMyOrders({ accessToken, page, size })
   if (!res.ok) {
@@ -71,12 +55,13 @@ export default async function MyOrdersPage ({ searchParams }) {
                     Order #{String(id)}
                   </Link>
                   <div className='mt-1 text-sm text-gray-700'>
-                    {status ? `Status: ${String(status)}` : 'Status: —'}
+                    {status ? getOrderStatusLabel(status) : '—'}
+                    {createdAt && ` · ${formatDateTime(createdAt)}`}
                   </div>
                 </div>
-                {createdAt && (
-                  <div className='text-sm text-gray-600'>Created: {String(createdAt)}</div>
-                )}
+                <div className='text-sm font-medium'>
+                  {formatMoney(o.totalAmount)}
+                </div>
               </div>
             </li>
           )

@@ -20,3 +20,14 @@ export async function getPaymentByOrderId ({ accessToken, orderId }) {
   })
 }
 
+export async function listPayments ({ accessToken, page = 0, size = 20 }) {
+  const url = new URL('http://local.invalid/api/payments')
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('size', String(size))
+
+  return backendCall(`/api/payments${url.search}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
+}
+

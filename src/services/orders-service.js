@@ -43,3 +43,27 @@ export async function updateOrderStatus ({ accessToken, id, payload }) {
   })
 }
 
+export async function pollPendingOrders ({ accessToken }) {
+  return backendCall('/api/orders/pending', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
+}
+
+export async function listOrdersByStatus ({
+  accessToken,
+  status,
+  page = 0,
+  size = 20
+}) {
+  const url = new URL('http://local.invalid/api/orders')
+  if (status) url.searchParams.set('status', status)
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('size', String(size))
+
+  return backendCall(`/api/orders${url.search}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
+}
+
