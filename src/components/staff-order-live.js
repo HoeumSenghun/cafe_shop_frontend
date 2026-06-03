@@ -47,9 +47,12 @@ export default function StaffOrderLive ({ initialOrder, orderId }) {
 
   return (
     <>
-      <p className='mt-2 text-xs text-gray-500'>
-        Live · refreshes every {POLL_MS / 1000}s
-        {liveAt ? ` · updated ${new Date(liveAt).toLocaleTimeString()}` : ''}
+      <p className='mt-2 flex flex-wrap items-center gap-2 text-xs text-muted'>
+        <span className='cafe-badge bg-sage/20 text-sage ring-sage/30'>Live</span>
+        <span>Updates every {POLL_MS / 1000}s</span>
+        {liveAt && (
+          <span>· {new Date(liveAt).toLocaleTimeString()}</span>
+        )}
       </p>
 
       <div className='mt-4'>

@@ -45,35 +45,37 @@ export default function PendingOrdersPoller () {
   }, [])
 
   return (
-    <section className='rounded border border-amber-200 bg-amber-50 p-4'>
-      <div className='flex items-center justify-between gap-3'>
-        <h2 className='font-medium text-amber-900'>New pending orders</h2>
-        <span className='text-xs text-amber-800'>Refreshes every {POLL_MS / 1000}s</span>
+    <section className='cafe-panel-amber mt-6'>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
+        <h2 className='font-display text-lg text-espresso'>New pending orders</h2>
+        <span className='cafe-badge bg-honey/30 text-mocha ring-honey/40'>
+          Live · {POLL_MS / 1000}s
+        </span>
       </div>
 
       {isLoading && (
-        <p className='mt-3 text-sm text-amber-800'>Loading…</p>
+        <p className='mt-4 text-sm text-muted'>Loading…</p>
       )}
 
       {error && (
-        <p className='mt-3 text-sm text-red-600'>{error}</p>
+        <p className='cafe-alert-error mt-4'>{error}</p>
       )}
 
       {!isLoading && !error && orders.length === 0 && (
-        <p className='mt-3 text-sm text-amber-800'>No pending orders right now.</p>
+        <p className='mt-4 text-sm text-muted'>No pending orders right now.</p>
       )}
 
       {!isLoading && orders.length > 0 && (
-        <ul className='mt-3 space-y-2'>
+        <ul className='mt-4 space-y-2'>
           {orders.map((o) => (
             <li key={String(o.id)}>
               <Link
-                className='block rounded border bg-white px-3 py-2 text-sm hover:bg-gray-50'
+                className='flex min-h-11 flex-col justify-center rounded-xl border border-border/80 bg-surface px-4 py-3 text-sm transition-colors hover:border-caramel sm:flex-row sm:items-center sm:justify-between'
                 href={`/staff/orders/${o.id}`}
               >
-                <span className='font-medium'>Order #{String(o.id)}</span>
-                <span className='ml-2 text-gray-600'>
-                  {formatDateTime(o.createdAt)} · {formatMoney(o.totalAmount)}
+                <span className='font-medium text-espresso'>Order #{String(o.id)}</span>
+                <span className='text-muted'>
+                  {formatDateTime(o.createdAt)} · ${formatMoney(o.totalAmount)}
                 </span>
               </Link>
             </li>

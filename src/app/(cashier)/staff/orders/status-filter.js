@@ -21,24 +21,22 @@ export default function StatusFilter ({ activeStatus }) {
   const isAll = !activeStatus
 
   return (
-    <div className='mt-6 flex flex-wrap gap-2'>
+    <div className='cafe-subnav mt-6'>
       <Link
-        className={`rounded px-3 py-1 text-sm ${
-          isAll ? 'bg-black text-white' : 'border bg-white hover:bg-gray-50'
-        }`}
+        className={isAll ? 'cafe-subnav-link cafe-subnav-link-active' : 'cafe-subnav-link'}
         href={hrefFor(null)}
         scroll={false}
       >
-        ALL
+        All
       </Link>
       {ORDER_STATUSES.map((s) => (
         <Link
           key={s}
-          className={`rounded px-3 py-1 text-sm ${
+          className={
             activeStatus === s
-              ? 'bg-black text-white'
-              : 'border bg-white hover:bg-gray-50'
-          }`}
+              ? 'cafe-subnav-link cafe-subnav-link-active'
+              : 'cafe-subnav-link'
+          }
           href={hrefFor(s)}
           scroll={false}
         >

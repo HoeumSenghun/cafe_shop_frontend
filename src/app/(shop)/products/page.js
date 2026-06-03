@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { listProducts } from '@/services/products-service'
 import { formatMoney } from '@/lib/format'
 import { resolveSearchParams } from '@/lib/search-params'
+import PageHeader from '@/components/ui/page-header'
 import ProductOrderButton from './order-button'
 
 export const dynamic = 'force-dynamic'
@@ -32,9 +33,9 @@ export default async function ProductsPage ({ searchParams }) {
 
   if (!res.ok) {
     return (
-      <main className='mx-auto max-w-5xl px-4 py-8'>
-        <h1 className='text-2xl font-semibold'>Products</h1>
-        <p className='mt-4 text-sm text-red-600'>{res.message}</p>
+      <main className='cafe-page'>
+        <PageHeader title='Menu' />
+        <p className='cafe-alert-error'>{res.message}</p>
       </main>
     )
   }
@@ -43,69 +44,82 @@ export default async function ProductsPage ({ searchParams }) {
   const items = Array.isArray(pageData.content) ? pageData.content : []
 
   return (
-    <main className='mx-auto max-w-5xl px-4 py-8'>
-      <div className='flex items-end justify-between gap-4'>
-        <div>
-          <h1 className='text-2xl font-semibold'>Products</h1>
-          <p className='mt-1 text-sm text-gray-600'>
-            {typeof pageData.totalElements === 'number'
-              ? `${pageData.totalElements} items`
-              : 'Browse products'}
-          </p>
-        </div>
-        <form className='flex items-center gap-2'>
+    <main className='cafe-page'>
+      <PageHeader
+        subtitle={
+          typeof pageData.totalElements === 'number'
+            ? `${pageData.totalElements} items · Tap to order`
+            : 'Handcrafted drinks & bites'
+        }
+        title='Our menu'
+      >
+        <form className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row'>
           <input
-            className='w-64 rounded border px-3 py-2 text-sm'
+            className='cafe-input sm:min-w-[12rem]'
             defaultValue={q || ''}
             name='q'
-            placeholder='Search…'
+            placeholder='Search menu…'
           />
-          <button className='rounded bg-black px-3 py-2 text-sm text-white'>
+          <button className='cafe-btn-primary w-full sm:w-auto' type='submit'>
             Search
           </button>
         </form>
-      </div>
+      </PageHeader>
 
-      <ul className='mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+      <ul className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
         {items.map((p, idx) => {
           const id = p?.id ?? p?.productId ?? idx
           const name = p?.name ?? p?.title ?? `Product #${String(id)}`
           const price = p?.price ?? p?.unitPrice ?? null
+          const available = p.isAvailable !== false
 
           return (
-            <li key={String(id)} className='rounded border p-4'>
-              <div className='flex items-start justify-between gap-3'>
-                <div>
-                  <h2 className='font-medium'>
-                    <Link className='hover:underline' href={`/products/${id}`}>
-                      {name}
-                    </Link>
-                  </h2>
-                  {price !== null && price !== undefined && (
-                    <p className='mt-1 text-sm text-gray-600'>
-                      {formatMoney(price)}
-                    </p>
-                  )}
+            <li key={String(id)} className='cafe-card-hover flex flex-col overflow-hidden'>
+              <div className='cafe-product-thumb'>
+                <span className='text-4xl opacity-80' aria-hidden>☕</span>
+                {!available && (
+                  <span className='absolute right-3 top-3 cafe-badge bg-berry/20 text-berry ring-berry/30'>
+                    Sold out
+                  </span>
+                )}
+              </div>
+              <div className='flex flex-1 flex-col p-4 sm:p-5'>
+                <h2 className='text-lg leading-snug'>
+                  <Link
+                    className='hover:text-caramel'
+                    href={`/products/${id}`}
+                  >
+                    {name}
+                  </Link>
+                </h2>
+                {price !== null && price !== undefined && (
+                  <p className='mt-1 font-display text-xl text-caramel'>
+                    ${formatMoney(price)}
+                  </p>
+                )}
+                {p?.description && (
+                  <p className='mt-2 line-clamp-2 flex-1 text-sm text-muted'>
+                    {String(p.description)}
+                  </p>
+                )}
+                <div className='mt-4'>
+                  <ProductOrderButton
+                    isAvailable={available}
+                    productId={id}
+                  />
                 </div>
               </div>
-              {p?.description && (
-                <p className='mt-3 line-clamp-3 text-sm text-gray-700'>
-                  {String(p.description)}
-                </p>
-              )}
-              <ProductOrderButton
-                isAvailable={p.isAvailable !== false}
-                productId={id}
-              />
             </li>
           )
         })}
       </ul>
 
       {items.length === 0 && (
-        <p className='mt-8 text-sm text-gray-600'>No products found.</p>
+        <div className='cafe-card mt-8 p-10 text-center'>
+          <p className='text-4xl' aria-hidden>🫖</p>
+          <p className='mt-3 text-muted'>No products found. Try another search.</p>
+        </div>
       )}
     </main>
   )
 }
-

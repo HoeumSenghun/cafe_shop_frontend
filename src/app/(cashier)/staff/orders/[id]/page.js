@@ -14,11 +14,11 @@ export default async function StaffOrderDetailPage ({ params, searchParams }) {
   const res = await getOrderById({ accessToken, id })
   if (!res.ok) {
     return (
-      <main className='mx-auto max-w-3xl px-4 py-8'>
-        <Link className='text-sm underline' href='/staff/orders'>
-          Back to orders
+      <main className='cafe-page'>
+        <Link className='text-sm font-medium text-caramel hover:text-espresso' href='/staff/orders'>
+          ← Orders queue
         </Link>
-        <p className='mt-4 text-sm text-red-600'>{res.message}</p>
+        <p className='cafe-alert-error mt-6'>{res.message}</p>
       </main>
     )
   }
@@ -26,14 +26,14 @@ export default async function StaffOrderDetailPage ({ params, searchParams }) {
   const order = res.data
 
   return (
-    <main className='mx-auto max-w-3xl px-4 py-8'>
-      <Link className='text-sm underline' href='/staff/orders'>
-        Back to orders
+    <main className='cafe-page max-w-3xl'>
+      <Link className='text-sm font-medium text-caramel hover:text-espresso' href='/staff/orders'>
+        ← Orders queue
       </Link>
 
       {sp.payment === 'success' && (
-        <div className='mt-4 rounded border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800'>
-          Payment recorded. Flow: prepare (PENDING → PREPARING → DONE) → customer pays → PAID → payment.
+        <div className='cafe-alert-success mt-4'>
+          Payment recorded successfully.
         </div>
       )}
 

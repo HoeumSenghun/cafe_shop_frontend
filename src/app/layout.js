@@ -1,21 +1,40 @@
 import './globals.css'
 
-import Link from 'next/link'
-import AppNav from '@/components/app-nav'
+import { Fraunces, DM_Sans } from 'next/font/google'
+import SiteHeader from '@/components/site-header'
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  display: 'swap'
+})
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-dm-sans',
+  display: 'swap'
+})
+
+export const metadata = {
+  title: 'Kboyhun Cafe',
+  description: 'Order drinks and treats at Kboyhun Cafe'
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#faf6f1'
+}
 
 export default function RootLayout ({ children }) {
   return (
-    <html lang='en'>
-      <body className='min-h-dvh bg-white text-gray-900'>
-        <header className='border-b'>
-          <div className='mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-4'>
-            <Link className='font-semibold' href='/'>
-              Cafe Shop
-            </Link>
-            <AppNav />
-          </div>
-        </header>
-        {children}
+    <html className={`${fraunces.variable} ${dmSans.variable}`} lang='en'>
+      <body>
+        <SiteHeader />
+        <div className='relative min-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-4rem)]'>
+          {children}
+        </div>
       </body>
     </html>
   )

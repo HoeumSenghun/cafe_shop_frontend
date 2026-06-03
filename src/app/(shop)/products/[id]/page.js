@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { getProductById } from '@/services/products-service'
 import { createOrderFromProductAction } from '@/actions/order-actions'
+import { formatMoney } from '@/lib/format'
+import PageHeader from '@/components/ui/page-header'
 
 export default async function ProductDetailPage ({ params }) {
   const { id } = await params
@@ -8,12 +10,11 @@ export default async function ProductDetailPage ({ params }) {
 
   if (!res.ok) {
     return (
-      <main className='mx-auto max-w-3xl px-4 py-8'>
-        <Link className='text-sm underline' href='/products'>
-          Back to products
+      <main className='cafe-page'>
+        <Link className='text-sm font-medium text-caramel hover:text-espresso' href='/products'>
+          ← Back to menu
         </Link>
-        <h1 className='mt-4 text-2xl font-semibold'>Product</h1>
-        <p className='mt-4 text-sm text-red-600'>{res.message}</p>
+        <p className='cafe-alert-error mt-6'>{res.message}</p>
       </main>
     )
   }
@@ -24,37 +25,47 @@ export default async function ProductDetailPage ({ params }) {
   const isAvailable = Boolean(p?.isAvailable)
 
   return (
-    <main className='mx-auto max-w-3xl px-4 py-8'>
-      <Link className='text-sm underline' href='/products'>
-        Back to products
+    <main className='cafe-page max-w-3xl'>
+      <Link className='text-sm font-medium text-caramel hover:text-espresso' href='/products'>
+        ← Back to menu
       </Link>
-      <h1 className='mt-4 text-2xl font-semibold'>{name}</h1>
+
+      <div className='cafe-product-thumb mt-6 rounded-2xl'>
+        <span className='text-6xl' aria-hidden>☕</span>
+      </div>
+
+      <PageHeader
+        className='mt-6'
+        subtitle={isAvailable ? 'Available now' : 'Currently unavailable'}
+        title={name}
+      />
+
       {price !== null && price !== undefined && (
-        <p className='mt-2 text-sm text-gray-700'>Price: {String(price)}</p>
+        <p className='-mt-4 font-display text-3xl text-caramel'>${formatMoney(price)}</p>
       )}
-      <p className='mt-2 text-sm text-gray-700'>
-        Availability: {isAvailable ? 'Available' : 'Unavailable'}
-      </p>
 
       {p?.description && (
-        <p className='mt-6 whitespace-pre-wrap text-gray-800'>
+        <p className='mt-6 whitespace-pre-wrap leading-relaxed text-muted'>
           {String(p.description)}
         </p>
       )}
 
-      <section className='mt-8 rounded border p-4'>
-        <h2 className='text-lg font-medium'>Order</h2>
-        <p className='mt-1 text-sm text-gray-700'>
-          Create an order for this product (CUSTOMER role).
+      <section className='cafe-card mt-8 p-5 sm:p-6'>
+        <h2 className='text-lg'>Place order</h2>
+        <p className='mt-1 text-sm text-muted'>
+          Choose quantity and add to your order.
         </p>
-        <form action={createOrderFromProductAction} className='mt-4 flex flex-wrap items-end gap-3'>
+        <form
+          action={createOrderFromProductAction}
+          className='mt-5 flex flex-col gap-4 sm:flex-row sm:items-end'
+        >
           <input name='productId' type='hidden' value={String(p.id)} />
-          <div>
-            <label className='block text-sm font-medium' htmlFor='quantity'>
+          <div className='flex-1 sm:max-w-[8rem]'>
+            <label className='cafe-label' htmlFor='quantity'>
               Quantity
             </label>
             <input
-              className='mt-2 w-28 rounded border px-3 py-2 text-sm'
+              className='cafe-input mt-2'
               defaultValue='1'
               id='quantity'
               min='1'
@@ -63,7 +74,7 @@ export default async function ProductDetailPage ({ params }) {
             />
           </div>
           <button
-            className='rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60'
+            className='cafe-btn-primary w-full sm:w-auto'
             disabled={!isAvailable}
             type='submit'
           >
@@ -74,4 +85,3 @@ export default async function ProductDetailPage ({ params }) {
     </main>
   )
 }
-

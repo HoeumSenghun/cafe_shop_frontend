@@ -1,4 +1,5 @@
-import { formatDateTime, formatMoney, getOrderStatusLabel } from '@/lib/format'
+import { formatDateTime, formatMoney } from '@/lib/format'
+import StatusBadge from '@/components/ui/status-badge'
 
 export default function OrderDetailView ({ order }) {
   if (!order) return null
@@ -6,47 +7,49 @@ export default function OrderDetailView ({ order }) {
   const items = Array.isArray(order.items) ? order.items : []
 
   return (
-    <div className='space-y-4'>
+    <div className='cafe-card space-y-5 p-4 sm:p-6'>
       <div className='flex flex-wrap items-center gap-3'>
-        <h2 className='text-lg font-medium'>Order #{String(order.id)}</h2>
-        <span className='rounded-full bg-gray-100 px-3 py-1 text-sm' title={String(order.status)}>
-          {getOrderStatusLabel(order.status)}
-        </span>
+        <h2 className='font-display text-xl sm:text-2xl'>
+          Order #{String(order.id)}
+        </h2>
+        <StatusBadge status={order.status} />
       </div>
 
       <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-        <div className='rounded border p-4'>
-          <div className='text-sm text-gray-600'>Created</div>
-          <div className='mt-1 font-medium'>{formatDateTime(order.createdAt)}</div>
+        <div className='rounded-xl bg-latte/50 p-4'>
+          <div className='text-xs font-medium uppercase tracking-wide text-muted'>Created</div>
+          <div className='mt-1 font-medium text-espresso'>{formatDateTime(order.createdAt)}</div>
         </div>
-        <div className='rounded border p-4'>
-          <div className='text-sm text-gray-600'>Total</div>
-          <div className='mt-1 font-medium'>{formatMoney(order.totalAmount)}</div>
+        <div className='rounded-xl bg-latte/50 p-4'>
+          <div className='text-xs font-medium uppercase tracking-wide text-muted'>Total</div>
+          <div className='mt-1 font-display text-xl text-caramel'>
+            ${formatMoney(order.totalAmount)}
+          </div>
         </div>
       </div>
 
-      <div className='overflow-auto rounded border'>
-        <table className='w-full text-left text-sm'>
-          <thead className='bg-gray-50 text-gray-700'>
+      <div className='-mx-4 overflow-x-auto sm:mx-0 sm:rounded-xl sm:border sm:border-border'>
+        <table className='w-full min-w-[20rem] text-left text-sm'>
+          <thead className='bg-latte/60 text-mocha'>
             <tr>
-              <th className='px-3 py-2'>Product</th>
-              <th className='px-3 py-2'>Qty</th>
-              <th className='px-3 py-2'>Unit</th>
-              <th className='px-3 py-2'>Line total</th>
+              <th className='px-4 py-3 font-medium'>Product</th>
+              <th className='px-3 py-3 font-medium'>Qty</th>
+              <th className='px-3 py-3 font-medium'>Unit</th>
+              <th className='px-4 py-3 font-medium'>Total</th>
             </tr>
           </thead>
           <tbody>
             {items.map((it) => (
-              <tr key={String(it.productId)} className='border-t'>
-                <td className='px-3 py-2'>{String(it.productName || it.productId)}</td>
-                <td className='px-3 py-2'>{String(it.quantity ?? '—')}</td>
-                <td className='px-3 py-2'>{formatMoney(it.unitPrice)}</td>
-                <td className='px-3 py-2'>{formatMoney(it.lineTotal)}</td>
+              <tr key={String(it.productId)} className='border-t border-border/80'>
+                <td className='px-4 py-3'>{String(it.productName || it.productId)}</td>
+                <td className='px-3 py-3'>{String(it.quantity ?? '—')}</td>
+                <td className='px-3 py-3'>${formatMoney(it.unitPrice)}</td>
+                <td className='px-4 py-3 font-medium'>${formatMoney(it.lineTotal)}</td>
               </tr>
             ))}
             {items.length === 0 && (
-              <tr className='border-t'>
-                <td className='px-3 py-3 text-gray-600' colSpan={4}>
+              <tr className='border-t border-border/80'>
+                <td className='px-4 py-4 text-muted' colSpan={4}>
                   No items.
                 </td>
               </tr>

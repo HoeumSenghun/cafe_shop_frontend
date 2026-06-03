@@ -5,6 +5,7 @@ import { resolveSearchParams } from '@/lib/search-params'
 import { listOrdersByStatus } from '@/services/orders-service'
 import OrdersQueueLive from '@/components/orders-queue-live'
 import PendingOrdersPoller from '@/components/pending-orders-poller'
+import PageHeader from '@/components/ui/page-header'
 import StatusFilter from './status-filter'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +20,7 @@ export default async function StaffOrdersPage ({ searchParams }) {
 
   const rawStatus = typeof sp.status === 'string' ? sp.status : ''
   const status = rawStatus === 'ALL' || rawStatus === '' ? null : rawStatus
-  const statusLabel = status || 'ALL'
+  const statusLabel = status || 'All'
   const page = normalizeNumber(sp.page, 0)
   const size = normalizeNumber(sp.size, 20)
 
@@ -30,32 +31,31 @@ export default async function StaffOrdersPage ({ searchParams }) {
   const orders = Array.isArray(pageData?.content) ? pageData.content : []
 
   return (
-    <main className='mx-auto max-w-5xl px-4 py-8'>
-      <div className='flex flex-wrap items-center justify-between gap-4'>
-        <div>
-          <h1 className='text-2xl font-semibold'>Orders queue</h1>
-          <p className='mt-1 text-sm text-gray-600'>
-            Filter: <span className='font-medium'>{statusLabel}</span>
+    <main className='cafe-page'>
+      <PageHeader
+        subtitle={
+          <>
+            Filter: <span className='font-medium text-espresso'>{statusLabel}</span>
             {pageData?.totalElements != null && (
-              <span> · {pageData.totalElements} total</span>
+              <span> · {pageData.totalElements} orders</span>
             )}
-          </p>
-        </div>
-        <Link className='text-sm underline' href='/staff'>
-          Cashier home
+          </>
+        }
+        title='Orders queue'
+      >
+        <Link className='cafe-btn-secondary w-full sm:w-auto' href='/staff'>
+          ← Workspace
         </Link>
-      </div>
+      </PageHeader>
 
-      <div className='mt-6'>
-        <PendingOrdersPoller />
-      </div>
+      <PendingOrdersPoller />
 
-      <Suspense fallback={<div className='mt-6 text-sm text-gray-500'>Loading filters…</div>}>
+      <Suspense fallback={<p className='mt-6 text-sm text-muted'>Loading filters…</p>}>
         <StatusFilter activeStatus={status} />
       </Suspense>
 
       {!res.ok && (
-        <p className='mt-6 text-sm text-red-600'>{res.message}</p>
+        <p className='cafe-alert-error mt-6'>{res.message}</p>
       )}
 
       {res.ok && (

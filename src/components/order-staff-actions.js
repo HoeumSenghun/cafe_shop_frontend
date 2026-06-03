@@ -32,14 +32,14 @@ function QuickStatusForm ({
       <input name='orderId' type='hidden' value={String(orderId)} />
       <input name='status' type='hidden' value={status} />
       <button
-        className={className || 'rounded border px-4 py-2 text-sm hover:bg-gray-50'}
+        className={className || 'cafe-btn-secondary'}
         disabled={pending}
         type='submit'
       >
         {pending ? 'Updating…' : label}
       </button>
       {state?.message && !state.ok && (
-        <p className='mt-2 text-sm text-red-600'>{state.message}</p>
+        <p className='cafe-alert-error mt-2'>{state.message}</p>
       )}
     </form>
   )
@@ -69,15 +69,15 @@ export default function OrderStaffActions ({
   return (
     <section className='mt-8 space-y-6'>
       {!isCancelled && canPrepare && (
-        <div className='rounded border border-amber-200 bg-amber-50 p-4'>
-          <h2 className='font-medium text-amber-900'>Preparation (kitchen)</h2>
-          <p className='mt-1 text-sm text-amber-800'>
+        <div className='cafe-panel-amber'>
+          <h2 className='font-display text-lg text-espresso'>Preparation</h2>
+          <p className='mt-1 text-sm text-muted'>
             Customer orders start as PENDING. Prepare first — payment happens when the order is ready (DONE).
           </p>
           <div className='mt-3 flex flex-wrap gap-2'>
             {currentStatus === 'PENDING' && (
               <QuickStatusForm
-                className='rounded bg-amber-700 px-4 py-2 text-sm text-white hover:bg-amber-800 disabled:opacity-60'
+                className='cafe-btn-accent'
                 label='Start preparing'
                 onOrderUpdated={onOrderUpdated}
                 orderId={orderId}
@@ -86,7 +86,7 @@ export default function OrderStaffActions ({
             )}
             {currentStatus === 'PREPARING' && (
               <QuickStatusForm
-                className='rounded bg-amber-700 px-4 py-2 text-sm text-white hover:bg-amber-800 disabled:opacity-60'
+                className='cafe-btn-accent'
                 label='Mark ready (DONE)'
                 onOrderUpdated={onOrderUpdated}
                 orderId={orderId}
@@ -98,15 +98,15 @@ export default function OrderStaffActions ({
       )}
 
       {!isCancelled && isReadyUnpaid && (
-        <div className='rounded border border-blue-200 bg-blue-50 p-4'>
-          <h2 className='font-medium text-blue-900'>Ready for pickup</h2>
-          <p className='mt-1 text-sm text-blue-800'>
+        <div className='cafe-panel-blue'>
+          <h2 className='font-display text-lg text-espresso'>Ready for pickup</h2>
+          <p className='mt-1 text-sm text-muted'>
             Order is prepared (DONE). When the customer pays, mark the order as PAID, then record the payment.
           </p>
           <form action={markOrderPaidAction} className='mt-3'>
             <input name='orderId' type='hidden' value={String(orderId)} />
             <button
-              className='rounded bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800'
+              className='cafe-btn-primary'
               type='submit'
             >
               Customer paid → mark PAID
@@ -116,13 +116,13 @@ export default function OrderStaffActions ({
       )}
 
       {!isCancelled && needsPaymentRecord && (
-        <div className='rounded border border-green-200 bg-green-50 p-4'>
-          <h2 className='font-medium text-green-900'>Payment (cashier)</h2>
-          <p className='mt-1 text-sm text-green-800'>
+        <div className='cafe-panel-green'>
+          <h2 className='font-display text-lg text-espresso'>Payment</h2>
+          <p className='mt-1 text-sm text-muted'>
             Status is PAID. Record cash, card, or KHQR in the system.
           </p>
           <Link
-            className='mt-3 inline-block rounded bg-green-700 px-4 py-2 text-sm font-medium text-white'
+            className='cafe-btn-primary mt-3 inline-block'
             href={paymentHref}
           >
             Process payment
@@ -131,14 +131,14 @@ export default function OrderStaffActions ({
       )}
 
       {currentStatus === 'DONE' && (
-        <p className='text-xs text-gray-600'>
+        <p className='text-xs text-muted'>
           Flow: PENDING → PREPARING → DONE → customer pays → PAID → process payment
         </p>
       )}
 
-      <div className='rounded border p-4'>
-        <h2 className='text-lg font-medium'>Change status manually</h2>
-        <p className='mt-1 text-xs text-gray-600'>
+      <div className='cafe-card p-4 sm:p-5'>
+        <h2 className='text-lg'>Change status manually</h2>
+        <p className='mt-1 text-xs text-muted'>
           Typical flow: PENDING → PREPARING → DONE → PAID → record payment.
         </p>
         <form action={action} className='mt-4 space-y-3'>
@@ -147,7 +147,7 @@ export default function OrderStaffActions ({
             Status
           </label>
           <select
-            className='w-full rounded border px-3 py-2 text-sm'
+            className='cafe-input'
             defaultValue={currentStatus || 'PENDING'}
             id='status'
             key={currentStatus}
@@ -161,13 +161,13 @@ export default function OrderStaffActions ({
           </select>
 
           {state?.message && (
-            <p className={`text-sm ${state.ok ? 'text-green-700' : 'text-red-600'}`}>
+            <p className={state.ok ? 'cafe-alert-success' : 'cafe-alert-error'}>
               {state.message}
             </p>
           )}
 
           <button
-            className='rounded border px-4 py-2 text-sm disabled:opacity-60'
+            className='cafe-btn-secondary disabled:opacity-60'
             disabled={pending}
             type='submit'
           >

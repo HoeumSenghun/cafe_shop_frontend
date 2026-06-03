@@ -53,11 +53,12 @@ export default function OrdersQueueLive ({
 
   return (
     <>
-      <p className='mb-3 text-xs text-gray-500'>
-        Live queue · refreshes every {POLL_MS / 1000}s
-        {total != null ? ` · ${total} total` : ''}
+      <p className='mb-3 flex flex-wrap items-center gap-2 text-xs text-muted'>
+        <span className='cafe-badge bg-sage/20 text-sage ring-sage/30'>Live queue</span>
+        <span>Every {POLL_MS / 1000}s</span>
+        {total != null && <span>· {total} total</span>}
       </p>
-      {error && <p className='mb-3 text-sm text-red-600'>{error}</p>}
+      {error && <p className='cafe-alert-error mb-3'>{error}</p>}
       <OrdersList hrefPrefix={hrefPrefix} orders={orders} />
     </>
   )
