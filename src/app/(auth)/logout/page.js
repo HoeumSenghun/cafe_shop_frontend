@@ -1,24 +1,17 @@
-import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getToken } from 'next-auth/jwt'
-import { authOptions } from '@/lib/auth-options'
-import { revokeBackendTokens } from '@/lib/logout-server'
+import { getSession } from '@/lib/auth-session'
+import LogoutView from './logout-view'
 
 export const dynamic = 'force-dynamic'
 
 export default async function LogoutPage () {
-  const headersList = await headers()
-  const token = await getToken({
-    req: {
-      headers: {
-        cookie: headersList.get('cookie') || ''
-      }
-    },
-    secret: authOptions.secret
-  })
+  const { isLoggedIn, session, roles } = await getSession()
 
-  await revokeBackendTokens(token)
+  if (!isLoggedIn) {
+    redirect('/login')
+  }
 
-  const callback = encodeURIComponent('/login')
-  redirect(`/api/auth/signout?callbackUrl=${callback}`)
+  const email = session?.user?.email || null
+
+  return <LogoutView email={email} roles={roles} />
 }
