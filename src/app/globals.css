@@ -153,4 +153,24 @@
   .cafe-panel-green {
     @apply rounded-2xl border border-sage/30 bg-gradient-to-br from-sage/10 to-cream p-4 shadow-sm shadow-espresso/5 sm:p-5;
   }
+
+  .cafe-mobile-menu > summary {
+    list-style: none;
+  }
+
+  .cafe-mobile-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .cafe-mobile-menu .menu-icon-close {
+    display: none;
+  }
+
+  .cafe-mobile-menu[open] .menu-icon-open {
+    display: none;
+  }
+
+  .cafe-mobile-menu[open] .menu-icon-close {
+    display: block;
+  }
 }

@@ -30,7 +30,12 @@ async function refreshAccessToken (token) {
   }
 }
 
+const useSecureCookies =
+  process.env.NODE_ENV === 'production' &&
+  (process.env.NEXTAUTH_URL || '').startsWith('https://')
+
 export const authOptions = {
+  useSecureCookies,
   providers: [
     CredentialsProvider({
       id: 'credentials',

@@ -15,21 +15,13 @@ function normalizeRoles (accessToken) {
   return roles.map((r) => String(r).replace(/^ROLE_/, ''))
 }
 
+
 export async function useSecureNextAuthCookies () {
   const h = await headers()
   const forwarded = h.get('x-forwarded-proto')
   if (forwarded) {
     return forwarded.split(',')[0].trim() === 'https'
   }
-
-  const host = (h.get('x-forwarded-host') || h.get('host') || '').split(':')[0]
-  if (host === 'localhost' || host === '127.0.0.1') {
-    return false
-  }
-
-  const url = process.env.NEXTAUTH_URL || ''
-  if (url) return url.startsWith('https://')
-
   return false
 }
 
@@ -39,11 +31,13 @@ function cookieName (suffix, useSecure) {
 }
 
 async function cookieNamesToClear () {
-  const useSecure = await useSecureNextAuthCookies()
-  const active = COOKIE_SUFFIXES.map((s) => cookieName(s, useSecure))
-  if (!useSecure) return active
-  const legacy = COOKIE_SUFFIXES.map((s) => cookieName(s, false))
-  return [...new Set([...active, ...legacy])]
+  const useSecure = await UseSecureNextAuthCookies()
+  const names = COOKIE_SUFFIXES.map((s) => cookieName(s, useSecure))
+  if (useSecure) {
+    const legacy = COOKIE_SUFFIXES.map((s) => cookieName(s, false))
+    return [...new Set([...names, ...legacy])]
+  }
+  return names
 }
 
 export async function establishCredentialsSession ({
@@ -53,7 +47,7 @@ export async function establishCredentialsSession ({
   expiresInSeconds = 3600
 }) {
   const maxAge = authOptions.session?.maxAge ?? 30 * 24 * 60 * 60
-  const useSecure = await useSecureNextAuthCookies()
+  const useSecure = await UseSecureNextAuthCookies()
   const name = cookieName('session-token', useSecure)
 
   const sessionToken = await encode({
