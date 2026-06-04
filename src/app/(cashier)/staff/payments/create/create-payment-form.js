@@ -2,12 +2,12 @@
 
 import { useActionState } from 'react'
 import { createPaymentAction } from '@/actions/staff-actions'
+import FormSubmitButton from '@/components/form-submit-button'
+import { formActionInitialState } from '@/lib/form-data'
 import { PAYMENT_METHODS } from '@/lib/format'
 
-const initialState = { ok: false, message: '' }
-
 export default function CreatePaymentForm ({ orderId, defaultAmount }) {
-  const [state, action, pending] = useActionState(createPaymentAction, initialState)
+  const [state, action] = useActionState(createPaymentAction, formActionInitialState)
 
   return (
     <form action={action} className='mt-8 space-y-4 rounded border p-4'>
@@ -60,17 +60,15 @@ export default function CreatePaymentForm ({ orderId, defaultAmount }) {
         )}
       </div>
 
-      {state?.message && !pending && (
+      {state?.message && !state.ok && (
         <p className='text-sm text-red-600'>{state.message}</p>
       )}
 
-      <button
+      <FormSubmitButton
         className='rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60'
-        disabled={pending}
-        type='submit'
-      >
-        {pending ? 'Saving…' : 'Save payment'}
-      </button>
+        label='Save payment'
+        pendingLabel='Saving…'
+      />
     </form>
   )
 }

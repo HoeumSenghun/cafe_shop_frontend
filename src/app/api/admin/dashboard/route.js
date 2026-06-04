@@ -1,5 +1,5 @@
 import { jsonError, jsonOk } from '@/lib/api-response'
-import { requireApiRole } from '@/lib/api-auth'
+import { requireApiRole } from '@/lib/auth-session'
 import { getAdminDashboard } from '@/services/admin-service'
 
 export async function GET () {

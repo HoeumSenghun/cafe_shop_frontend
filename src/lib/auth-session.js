@@ -1,8 +1,11 @@
 import 'server-only'
 
-import { getServerSession } from 'next-auth'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
+import { jsonError } from '@/lib/api-response'
+import { useSecureNextAuthCookies } from '@/lib/auth-server'
 
 export async function getSession () {
   const session = await getServerSession(authOptions)
@@ -31,11 +34,7 @@ export async function ensureAccessToken () {
     return { ok: false, message: 'Session expired' }
   }
 
-  return {
-    ok: true,
-    accessToken: session.accessToken,
-    refreshToken: session.refreshToken
-  }
+  return { ok: true, accessToken: session.accessToken }
 }
 
 export async function ensureRole (allowedRoles, { redirectTo = '/login' } = {}) {
@@ -59,4 +58,42 @@ export async function ensureAdmin () {
 
 export async function ensureCustomer () {
   return ensureRole(['CUSTOMER'], { redirectTo: '/login' })
+}
+
+export async function requireApiAuth () {
+  const session = await getServerSession(authOptions)
+  if (!session?.accessToken) {
+    return { error: jsonError('Unauthorized', 401) }
+  }
+  if (session.error === 'RefreshTokenError') {
+    return { error: jsonError('Session expired', 401) }
+  }
+  return { session, accessToken: session.accessToken }
+}
+
+export function hasRole (session, role) {
+  return (session?.roles || []).includes(role)
+}
+
+export async function requireApiRole (roles) {
+  const auth = await requireApiAuth()
+  if (auth.error) return auth
+
+  const allowed = roles.some((r) => hasRole(auth.session, r))
+  if (!allowed) {
+    return { error: jsonError('Forbidden', 403) }
+  }
+
+  return auth
+}
+
+/** Read JWT from cookie for logout (server action). */
+export async function getSessionTokenForLogout () {
+  const { getToken } = await import('next-auth/jwt')
+  const headersList = await headers()
+  return getToken({
+    req: { headers: { cookie: headersList.get('cookie') || '' } },
+    secret: authOptions.secret,
+    secureCookie: await useSecureNextAuthCookies()
+  })
 }

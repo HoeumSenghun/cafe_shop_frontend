@@ -1,5 +1,5 @@
 import { jsonError, jsonOk, zodFieldErrors } from '@/lib/api-response'
-import { requireApiRole } from '@/lib/api-auth'
+import { requireApiRole } from '@/lib/auth-session'
 import { updateOrderStatusSchema } from '@/lib/schemas/orders'
 import { updateOrderStatus } from '@/services/orders-service'
 

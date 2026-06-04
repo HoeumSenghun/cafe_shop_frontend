@@ -2,7 +2,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { loginSchema } from '@/lib/schemas/auth'
 import { getJwtRolesServer } from '@/lib/jwt-server'
 import { loginUser, refreshTokens } from '@/services/auth-service'
-import { revokeBackendTokens } from '@/lib/logout-server'
+import { revokeBackendTokens } from '@/lib/auth-server'
 
 function normalizeRoles (accessToken) {
   const roles = getJwtRolesServer(accessToken)

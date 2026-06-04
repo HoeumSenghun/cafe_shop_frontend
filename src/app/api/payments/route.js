@@ -1,5 +1,5 @@
 import { jsonError, jsonOk, zodFieldErrors } from '@/lib/api-response'
-import { requireApiRole } from '@/lib/api-auth'
+import { requireApiRole } from '@/lib/auth-session'
 import { createPaymentSchema } from '@/lib/schemas/payments'
 import { createPayment, getPaymentByOrderId, listPayments } from '@/services/payments-service'
 import { getOrderById } from '@/services/orders-service'

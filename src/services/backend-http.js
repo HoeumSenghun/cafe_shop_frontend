@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { getBackendBaseUrl } from '@/lib/server-config'
+import { getBackendBaseUrl } from '@/lib/config'
 
 function joinUrl (baseUrl, path) {
   const base = baseUrl.replace(/\/+$/, '')

@@ -1,5 +1,5 @@
 import { jsonError, jsonOk } from '@/lib/api-response'
-import { requireApiRole } from '@/lib/api-auth'
+import { requireApiRole } from '@/lib/auth-session'
 import { getPaymentByOrderId } from '@/services/payments-service'
 
 export async function GET (_request, { params }) {

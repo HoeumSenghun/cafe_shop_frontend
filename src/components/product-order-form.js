@@ -1,56 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { clientApi } from '@/lib/client-api'
-import { createOrderFromProductSchema } from '@/lib/schemas/orders'
+import { useActionState } from 'react'
+import { createOrderFromProductFormAction } from '@/actions/order-actions'
+import FormSubmitButton from '@/components/form-submit-button'
+import { formActionInitialState } from '@/lib/form-data'
 
 export default function ProductOrderForm ({ productId, isAvailable }) {
-  const router = useRouter()
-  const [pending, setPending] = useState(false)
-  const [message, setMessage] = useState('')
-
-  async function handleSubmit (event) {
-    event.preventDefault()
-    if (!isAvailable) return
-
-    const formData = new FormData(event.currentTarget)
-    const parsed = createOrderFromProductSchema.safeParse({
-      productId,
-      quantity: formData.get('quantity')
-    })
-
-    if (!parsed.success) {
-      setMessage(parsed.error.issues[0]?.message || 'Invalid quantity')
-      return
-    }
-
-    setPending(true)
-    const res = await clientApi('/orders', {
-      method: 'POST',
-      body: {
-        items: [
-          {
-            productId: parsed.data.productId,
-            quantity: parsed.data.quantity
-          }
-        ]
-      }
-    })
-    setPending(false)
-
-    if (!res.ok) {
-      setMessage(res.message)
-      return
-    }
-
-    const orderId = res.data?.id
-    router.push(orderId ? `/orders/me/${orderId}` : '/orders/me')
-    router.refresh()
-  }
+  const [state, action] = useActionState(
+    createOrderFromProductFormAction,
+    formActionInitialState
+  )
 
   return (
-    <form className='mt-5 flex flex-col gap-4 sm:flex-row sm:items-end' onSubmit={handleSubmit}>
+    <form action={action} className='mt-5 flex flex-col gap-4 sm:flex-row sm:items-end'>
+      <input name='productId' type='hidden' value={String(productId)} />
       <div className='flex-1 sm:max-w-[8rem]'>
         <label className='cafe-label' htmlFor='quantity'>
           Quantity
@@ -64,14 +27,15 @@ export default function ProductOrderForm ({ productId, isAvailable }) {
           type='number'
         />
       </div>
-      <button
+      <FormSubmitButton
         className='cafe-btn-primary w-full sm:w-auto'
-        disabled={!isAvailable || pending}
-        type='submit'
-      >
-        {pending ? 'Ordering…' : 'Order now'}
-      </button>
-      {message && <p className='cafe-alert-error sm:col-span-2'>{message}</p>}
+        disabled={!isAvailable}
+        label='Order now'
+        pendingLabel='Ordering…'
+      />
+      {state?.message && !state.ok && (
+        <p className='cafe-alert-error sm:col-span-2'>{state.message}</p>
+      )}
     </form>
   )
 }

@@ -2,33 +2,27 @@
 
 import Link from 'next/link'
 import { useActionState } from 'react'
-import { loginAction } from '@/actions/auth-actions'
+import { registerAction } from '@/actions/auth-actions'
 import FormSubmitButton from '@/components/form-submit-button'
 import { formActionInitialState } from '@/lib/form-data'
 
-export default function LoginForm ({ signedOut = false }) {
-  const [state, action] = useActionState(loginAction, formActionInitialState)
+export default function RegisterForm () {
+  const [state, action] = useActionState(registerAction, formActionInitialState)
   const fieldErrors = state?.fieldErrors || {}
 
   return (
     <main className='cafe-page flex min-h-[70dvh] items-center justify-center'>
       <div className='cafe-card w-full max-w-md p-6 sm:p-8'>
-        {signedOut && (
-          <p className='cafe-alert-success mb-6 text-center sm:text-left'>
-            You have signed out of Kboyhun Cafe. See you again soon.
-          </p>
-        )}
-
         <div className='text-center sm:text-left'>
-          <p className='text-xs font-medium uppercase tracking-widest text-caramel'>Welcome back</p>
-          <h1 className='mt-2 text-2xl sm:text-3xl'>Sign in</h1>
+          <p className='text-xs font-medium uppercase tracking-widest text-caramel'>Join us</p>
+          <h1 className='mt-2 text-2xl sm:text-3xl'>Create account</h1>
           <p className='mt-2 text-sm text-muted'>
-            New here?{' '}
+            Already have an account?{' '}
             <Link
               className='font-medium text-espresso underline decoration-caramel decoration-2 underline-offset-2'
-              href='/register'
+              href='/login'
             >
-              Create an account
+              Sign in
             </Link>
           </p>
         </div>
@@ -38,16 +32,19 @@ export default function LoginForm ({ signedOut = false }) {
             <label className='cafe-label' htmlFor='email'>
               Email
             </label>
-            <input
-              className='cafe-input mt-2'
-              id='email'
-              name='email'
-              type='email'
-              autoComplete='email'
-              required
-            />
+            <input className='cafe-input mt-2' id='email' name='email' type='email' required />
             {fieldErrors.email && (
               <p className='mt-1 text-sm text-berry'>{fieldErrors.email}</p>
+            )}
+          </div>
+
+          <div>
+            <label className='cafe-label' htmlFor='fullName'>
+              Full name
+            </label>
+            <input className='cafe-input mt-2' id='fullName' name='fullName' type='text' required />
+            {fieldErrors.fullName && (
+              <p className='mt-1 text-sm text-berry'>{fieldErrors.fullName}</p>
             )}
           </div>
 
@@ -60,7 +57,8 @@ export default function LoginForm ({ signedOut = false }) {
               id='password'
               name='password'
               type='password'
-              autoComplete='current-password'
+              minLength={8}
+              maxLength={72}
               required
             />
             {fieldErrors.password && (
@@ -72,7 +70,7 @@ export default function LoginForm ({ signedOut = false }) {
             <p className='cafe-alert-error'>{state.message}</p>
           )}
 
-          <FormSubmitButton label='Sign in' pendingLabel='Signing in…' />
+          <FormSubmitButton label='Create account' pendingLabel='Creating…' />
         </form>
       </div>
     </main>

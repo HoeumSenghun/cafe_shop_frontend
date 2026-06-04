@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { confirmLogoutAction } from '@/actions/logout-actions'
+import { confirmLogoutAction } from '@/actions/auth-actions'
 
 function roleLabel (roles) {
   if (roles.includes('ADMIN')) return 'Admin'

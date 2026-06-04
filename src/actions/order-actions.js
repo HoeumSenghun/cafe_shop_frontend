@@ -2,23 +2,32 @@
 
 import { redirect } from 'next/navigation'
 import { ensureCustomer } from '@/lib/auth-session'
+import { resolveFormData } from '@/lib/form-data'
+import { createOrderFromProductSchema } from '@/lib/schemas/orders'
 import { createOrder } from '@/services/orders-service'
 
 async function createOrderCore (resolvedFormData) {
   const { accessToken } = await ensureCustomer()
 
-  const productId = Number(resolvedFormData.get('productId'))
-  const quantity = Number(resolvedFormData.get('quantity') || 1)
+  const parsed = createOrderFromProductSchema.safeParse({
+    productId: resolvedFormData.get('productId'),
+    quantity: resolvedFormData.get('quantity') || 1
+  })
 
-  if (!Number.isFinite(productId)) {
-    return { ok: false, message: 'productId is required' }
-  }
-  if (!Number.isFinite(quantity) || quantity < 1) {
-    return { ok: false, message: 'quantity must be >= 1' }
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: parsed.error.issues[0]?.message || 'Invalid order'
+    }
   }
 
   const payload = {
-    items: [{ productId, quantity }]
+    items: [
+      {
+        productId: parsed.data.productId,
+        quantity: parsed.data.quantity
+      }
+    ]
   }
 
   const res = await createOrder({ accessToken, payload })
@@ -28,25 +37,29 @@ async function createOrderCore (resolvedFormData) {
 }
 
 export async function createOrderAction (prevState, formData) {
-  // Supports both:
-  // - useActionState: (prevState, formData)
-  // - direct <form action>: (formData)
-  const resolvedFormData =
-    formData && typeof formData.get === 'function'
-      ? formData
-      : prevState && typeof prevState.get === 'function'
-        ? prevState
-        : null
-
-  if (!resolvedFormData) {
+  const resolved = resolveFormData(prevState, formData)
+  if (!resolved) {
     return { ok: false, message: 'Invalid form submission' }
   }
 
-  return createOrderCore(resolvedFormData)
+  const result = await createOrderCore(resolved)
+  if (!result.ok) return result
+
+  const orderId = result.data?.id
+  if (orderId) {
+    redirect(`/orders/me/${orderId}`)
+  }
+
+  redirect('/orders/me')
 }
 
-export async function createOrderFromProductAction (formData) {
-  const result = await createOrderCore(formData)
+export async function createOrderFromProductFormAction (prevState, formData) {
+  const resolved = resolveFormData(prevState, formData)
+  if (!resolved) {
+    return { ok: false, message: 'Invalid form submission' }
+  }
+
+  const result = await createOrderCore(resolved)
   if (!result.ok) return result
 
   const orderId = result.data?.id

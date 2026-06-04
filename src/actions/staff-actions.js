@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { ensureStaff } from '@/lib/auth-session'
 import { resolveFormData } from '@/lib/form-data'
@@ -76,6 +77,9 @@ export async function updateOrderStatusAction (prevState, formData) {
     payload: { status }
   })
   if (!res.ok) return { ok: false, message: res.message }
+
+  revalidatePath(`/staff/orders/${id}`)
+  revalidatePath('/staff/orders')
 
   return { ok: true, message: res.message, data: res.data }
 }

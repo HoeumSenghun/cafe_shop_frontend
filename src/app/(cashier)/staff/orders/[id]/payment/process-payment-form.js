@@ -1,42 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { clientApi } from '@/lib/client-api'
+import { useActionState } from 'react'
+import { processPaymentAction } from '@/actions/staff-actions'
+import FormSubmitButton from '@/components/form-submit-button'
+import { formActionInitialState } from '@/lib/form-data'
 import { formatMoney, PAYMENT_METHODS } from '@/lib/format'
 
 export default function ProcessPaymentForm ({ orderId, totalAmount }) {
-  const router = useRouter()
-  const [pending, setPending] = useState(false)
-  const [message, setMessage] = useState('')
-
-  async function handleSubmit (event) {
-    event.preventDefault()
-    setMessage('')
-    setPending(true)
-
-    const formData = new FormData(event.currentTarget)
-    const res = await clientApi('/payments', {
-      method: 'POST',
-      body: {
-        orderId: Number(formData.get('orderId')),
-        amount: Number(formData.get('amount')),
-        method: String(formData.get('method'))
-      }
-    })
-    setPending(false)
-
-    if (!res.ok) {
-      setMessage(res.message)
-      return
-    }
-
-    router.push(`/staff/orders/${orderId}?payment=success`)
-    router.refresh()
-  }
+  const [state, action] = useActionState(processPaymentAction, formActionInitialState)
 
   return (
-    <form action='#' className='cafe-panel-green mt-6 space-y-4' onSubmit={handleSubmit}>
+    <form action={action} className='cafe-panel-green mt-6 space-y-4'>
       <h2 className='font-display text-lg'>Record payment</h2>
       <p className='text-sm text-muted'>Order is PAID — enter cash, card, or KHQR.</p>
 
@@ -75,11 +49,15 @@ export default function ProcessPaymentForm ({ orderId, totalAmount }) {
         </select>
       </div>
 
-      {message && <p className='cafe-alert-error'>{message}</p>}
+      {state?.message && !state.ok && (
+        <p className='cafe-alert-error'>{state.message}</p>
+      )}
 
-      <button className='cafe-btn-primary w-full' disabled={pending} type='submit'>
-        {pending ? 'Processing…' : 'Confirm payment'}
-      </button>
+      <FormSubmitButton
+        className='cafe-btn-primary w-full'
+        label='Confirm payment'
+        pendingLabel='Processing…'
+      />
     </form>
   )
 }
