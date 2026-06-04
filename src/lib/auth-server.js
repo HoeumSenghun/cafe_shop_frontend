@@ -15,13 +15,20 @@ function normalizeRoles (accessToken) {
   return roles.map((r) => String(r).replace(/^ROLE_/, ''))
 }
 
+/** Same rule as authOptions.useSecureCookies — must match or login “works” but session is missing. */
+export function isSecureAuthCookies () {
+  return (process.env.NEXTAUTH_URL || '').startsWith('https://')
+}
 
 export async function useSecureNextAuthCookies () {
+  if (isSecureAuthCookies()) return true
+
   const h = await headers()
   const forwarded = h.get('x-forwarded-proto')
   if (forwarded) {
     return forwarded.split(',')[0].trim() === 'https'
   }
+
   return false
 }
 
@@ -31,7 +38,7 @@ function cookieName (suffix, useSecure) {
 }
 
 async function cookieNamesToClear () {
-  const useSecure = await UseSecureNextAuthCookies()
+  const useSecure = await useSecureNextAuthCookies()
   const names = COOKIE_SUFFIXES.map((s) => cookieName(s, useSecure))
   if (useSecure) {
     const legacy = COOKIE_SUFFIXES.map((s) => cookieName(s, false))
@@ -47,7 +54,7 @@ export async function establishCredentialsSession ({
   expiresInSeconds = 3600
 }) {
   const maxAge = authOptions.session?.maxAge ?? 30 * 24 * 60 * 60
-  const useSecure = await UseSecureNextAuthCookies()
+  const useSecure = await useSecureNextAuthCookies()
   const name = cookieName('session-token', useSecure)
 
   const sessionToken = await encode({

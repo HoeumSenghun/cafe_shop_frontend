@@ -25,14 +25,29 @@ export async function backendCall (path, options = {}) {
 
   const url = joinUrl(getBackendBaseUrl(), path)
 
-  const res = await fetch(url, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(extraHeaders || {})
-    },
-    body: body === undefined ? undefined : JSON.stringify(body)
-  })
+  let res
+  try {
+    res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(extraHeaders || {})
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(60_000)
+    })
+  } catch (err) {
+    const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError'
+    return {
+      ok: false,
+      status: 0,
+      message: isTimeout
+        ? 'API timed out (Render may be waking up — try again in a minute)'
+        : `Cannot reach API at ${getBackendBaseUrl()}`,
+      data: null,
+      raw: null
+    }
+  }
 
   const json = await readJsonSafely(res)
 

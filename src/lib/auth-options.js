@@ -2,7 +2,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { loginSchema } from '@/lib/schemas/auth'
 import { getJwtRolesServer } from '@/lib/jwt-server'
 import { loginUser, refreshTokens } from '@/services/auth-service'
-import { revokeBackendTokens } from '@/lib/auth-server'
+import { isSecureAuthCookies, revokeBackendTokens } from '@/lib/auth-server'
 
 function normalizeRoles (accessToken) {
   const roles = getJwtRolesServer(accessToken)
@@ -30,12 +30,8 @@ async function refreshAccessToken (token) {
   }
 }
 
-const useSecureCookies =
-  process.env.NODE_ENV === 'production' &&
-  (process.env.NEXTAUTH_URL || '').startsWith('https://')
-
 export const authOptions = {
-  useSecureCookies,
+  useSecureCookies: isSecureAuthCookies(),
   providers: [
     CredentialsProvider({
       id: 'credentials',
@@ -111,5 +107,10 @@ export const authOptions = {
       await revokeBackendTokens(token)
     }
   },
-  secret: process.env.NEXTAUTH_SECRET || 'kboyhun-cafe-dev-secret-change-in-production'
+  secret:
+    process.env.NEXTAUTH_SECRET ||
+    process.env.AUTH_SECRET ||
+    (process.env.NODE_ENV === 'production'
+      ? undefined
+      : 'kboyhun-cafe-dev-secret-change-in-production')
 }
