@@ -2,13 +2,13 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 import { ensureStaff } from '@/lib/auth-session'
 import { resolveSearchParams } from '@/lib/search-params'
-import { listOrdersByStatus } from '@/services/orders-service'
-import OrdersQueueLive from '@/components/orders-queue-live'
-import PendingOrdersPoller from '@/components/pending-orders-poller'
+import { listOrdersByStatus, pollPendingOrders } from '@/services/orders-service'
+import OrdersList from '@/components/orders-list'
+import PendingOrdersList from '@/components/pending-orders-list'
 import PageHeader from '@/components/ui/page-header'
 import StatusFilter from './status-filter'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 5
 
 function normalizeNumber (value, fallback) {
   const n = Number(value)
@@ -25,7 +25,10 @@ export default async function StaffOrdersPage ({ searchParams }) {
   const size = normalizeNumber(sp.size, 20)
 
   const { accessToken } = await ensureStaff()
-  const res = await listOrdersByStatus({ accessToken, status, page, size })
+  const [res, pendingRes] = await Promise.all([
+    listOrdersByStatus({ accessToken, status, page, size }),
+    pollPendingOrders({ accessToken })
+  ])
 
   const pageData = res.ok ? res.data : null
   const orders = Array.isArray(pageData?.content) ? pageData.content : []
@@ -39,6 +42,7 @@ export default async function StaffOrdersPage ({ searchParams }) {
             {pageData?.totalElements != null && (
               <span> · {pageData.totalElements} orders</span>
             )}
+            <span className='block text-xs text-muted mt-1'>Page auto-refreshes every 5s</span>
           </>
         }
         title='Orders queue'
@@ -48,7 +52,11 @@ export default async function StaffOrdersPage ({ searchParams }) {
         </Link>
       </PageHeader>
 
-      <PendingOrdersPoller />
+      <PendingOrdersList
+        error={pendingRes.ok ? '' : pendingRes.message}
+        orders={pendingRes.ok ? pendingRes.data : []}
+        revalidateSeconds={5}
+      />
 
       <Suspense fallback={<p className='mt-6 text-sm text-muted'>Loading filters…</p>}>
         <StatusFilter activeStatus={status} />
@@ -60,14 +68,7 @@ export default async function StaffOrdersPage ({ searchParams }) {
 
       {res.ok && (
         <div className='mt-6'>
-          <OrdersQueueLive
-            hrefPrefix='/staff/orders'
-            initialOrders={orders}
-            initialTotal={pageData?.totalElements}
-            page={page}
-            size={size}
-            status={status}
-          />
+          <OrdersList hrefPrefix='/staff/orders' orders={orders} />
         </div>
       )}
     </main>

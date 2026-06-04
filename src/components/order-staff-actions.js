@@ -1,63 +1,54 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import {
-  markOrderPaidAction,
-  updateOrderStatusAction
-} from '@/actions/staff-actions'
+import { clientApi } from '@/lib/client-api'
 import { ORDER_STATUSES, getOrderStatusLabel } from '@/lib/format'
 
-const initialState = { ok: false, message: '', data: null }
+async function patchOrderStatus (orderId, status) {
+  return clientApi(`/orders/${orderId}/status`, {
+    method: 'PATCH',
+    body: { status }
+  })
+}
 
-function QuickStatusForm ({
-  orderId,
-  status,
-  label,
-  className,
-  onOrderUpdated
-}) {
+function QuickStatusButton ({ orderId, status, label, className }) {
   const router = useRouter()
-  const [state, action, pending] = useActionState(updateOrderStatusAction, initialState)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (!state?.ok || !state?.data) return
-    onOrderUpdated?.(state.data)
+  async function handleClick () {
+    setPending(true)
+    setError('')
+    const res = await patchOrderStatus(orderId, status)
+    setPending(false)
+    if (!res.ok) {
+      setError(res.message)
+      return
+    }
     router.refresh()
-  }, [state, onOrderUpdated, router])
+  }
 
   return (
-    <form action={action}>
-      <input name='orderId' type='hidden' value={String(orderId)} />
-      <input name='status' type='hidden' value={status} />
+    <div>
       <button
         className={className || 'cafe-btn-secondary'}
         disabled={pending}
-        type='submit'
+        type='button'
+        onClick={handleClick}
       >
         {pending ? 'Updating…' : label}
       </button>
-      {state?.message && !state.ok && (
-        <p className='cafe-alert-error mt-2'>{state.message}</p>
-      )}
-    </form>
+      {error && <p className='cafe-alert-error mt-2'>{error}</p>}
+    </div>
   )
 }
 
-export default function OrderStaffActions ({
-  orderId,
-  currentStatus,
-  onOrderUpdated
-}) {
+export default function OrderStaffActions ({ orderId, currentStatus }) {
   const router = useRouter()
-  const [state, action, pending] = useActionState(updateOrderStatusAction, initialState)
-
-  useEffect(() => {
-    if (!state?.ok || !state?.data) return
-    onOrderUpdated?.(state.data)
-    router.refresh()
-  }, [state, onOrderUpdated, router])
+  const [pending, setPending] = useState(false)
+  const [message, setMessage] = useState('')
 
   const paymentHref = `/staff/orders/${orderId}/payment`
   const isCancelled = currentStatus === 'CANCELLED'
@@ -66,29 +57,59 @@ export default function OrderStaffActions ({
   const isReadyUnpaid = currentStatus === 'DONE'
   const needsPaymentRecord = currentStatus === 'PAID'
 
+  async function handleMarkPaid () {
+    setPending(true)
+    setMessage('')
+    const res = await patchOrderStatus(orderId, 'PAID')
+    setPending(false)
+    if (!res.ok) {
+      setMessage(res.message)
+      return
+    }
+    router.push(paymentHref)
+    router.refresh()
+  }
+
+  async function handleManualSave (event) {
+    event.preventDefault()
+    setMessage('')
+    setPending(true)
+
+    const formData = new FormData(event.currentTarget)
+    const status = String(formData.get('status') || '').trim()
+
+    const res = await patchOrderStatus(orderId, status)
+    setPending(false)
+
+    if (!res.ok) {
+      setMessage(res.message)
+      return
+    }
+
+    router.refresh()
+  }
+
   return (
     <section className='mt-8 space-y-6'>
       {!isCancelled && canPrepare && (
         <div className='cafe-panel-amber'>
           <h2 className='font-display text-lg text-espresso'>Preparation</h2>
           <p className='mt-1 text-sm text-muted'>
-            Customer orders start as PENDING. Prepare first — payment happens when the order is ready (DONE).
+            Customer orders start as PENDING. Prepare first — payment when ready (DONE).
           </p>
           <div className='mt-3 flex flex-wrap gap-2'>
             {currentStatus === 'PENDING' && (
-              <QuickStatusForm
+              <QuickStatusButton
                 className='cafe-btn-accent'
                 label='Start preparing'
-                onOrderUpdated={onOrderUpdated}
                 orderId={orderId}
                 status='PREPARING'
               />
             )}
             {currentStatus === 'PREPARING' && (
-              <QuickStatusForm
+              <QuickStatusButton
                 className='cafe-btn-accent'
                 label='Mark ready (DONE)'
-                onOrderUpdated={onOrderUpdated}
                 orderId={orderId}
                 status='DONE'
               />
@@ -101,56 +122,40 @@ export default function OrderStaffActions ({
         <div className='cafe-panel-blue'>
           <h2 className='font-display text-lg text-espresso'>Ready for pickup</h2>
           <p className='mt-1 text-sm text-muted'>
-            Order is prepared (DONE). When the customer pays, mark the order as PAID, then record the payment.
+            When the customer pays, mark PAID then record payment.
           </p>
-          <form action={markOrderPaidAction} className='mt-3'>
-            <input name='orderId' type='hidden' value={String(orderId)} />
-            <button
-              className='cafe-btn-primary'
-              type='submit'
-            >
-              Customer paid → mark PAID
-            </button>
-          </form>
+          <button
+            className='cafe-btn-primary mt-3'
+            disabled={pending}
+            type='button'
+            onClick={handleMarkPaid}
+          >
+            {pending ? 'Updating…' : 'Customer paid → mark PAID'}
+          </button>
+          {message && <p className='cafe-alert-error mt-2'>{message}</p>}
         </div>
       )}
 
       {!isCancelled && needsPaymentRecord && (
         <div className='cafe-panel-green'>
           <h2 className='font-display text-lg text-espresso'>Payment</h2>
-          <p className='mt-1 text-sm text-muted'>
-            Status is PAID. Record cash, card, or KHQR in the system.
-          </p>
-          <Link
-            className='cafe-btn-primary mt-3 inline-block'
-            href={paymentHref}
-          >
+          <p className='mt-1 text-sm text-muted'>Status is PAID. Record payment in the system.</p>
+          <Link className='cafe-btn-primary mt-3 inline-block' href={paymentHref}>
             Process payment
           </Link>
         </div>
       )}
 
-      {currentStatus === 'DONE' && (
-        <p className='text-xs text-muted'>
-          Flow: PENDING → PREPARING → DONE → customer pays → PAID → process payment
-        </p>
-      )}
-
-      <div className='cafe-card p-4 sm:p-5'>
+      <div className='cafe-card p-4 sm:p-5' key={currentStatus}>
         <h2 className='text-lg'>Change status manually</h2>
-        <p className='mt-1 text-xs text-muted'>
-          Typical flow: PENDING → PREPARING → DONE → PAID → record payment.
-        </p>
-        <form action={action} className='mt-4 space-y-3'>
-          <input name='orderId' type='hidden' value={String(orderId)} />
-          <label className='block text-sm font-medium' htmlFor='status'>
+        <form className='mt-4 space-y-3' onSubmit={handleManualSave}>
+          <label className='cafe-label' htmlFor='status'>
             Status
           </label>
           <select
             className='cafe-input'
             defaultValue={currentStatus || 'PENDING'}
             id='status'
-            key={currentStatus}
             name='status'
           >
             {ORDER_STATUSES.map((s) => (
@@ -160,17 +165,9 @@ export default function OrderStaffActions ({
             ))}
           </select>
 
-          {state?.message && (
-            <p className={state.ok ? 'cafe-alert-success' : 'cafe-alert-error'}>
-              {state.message}
-            </p>
-          )}
+          {message && <p className='cafe-alert-error'>{message}</p>}
 
-          <button
-            className='cafe-btn-secondary disabled:opacity-60'
-            disabled={pending}
-            type='submit'
-          >
+          <button className='cafe-btn-secondary' disabled={pending} type='submit'>
             {pending ? 'Saving…' : 'Save status'}
           </button>
         </form>

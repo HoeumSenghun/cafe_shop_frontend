@@ -1,30 +1,55 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import PropTypes from 'prop-types'
-import { loginAction } from '@/actions/auth-actions'
-
-function FieldError ({ message }) {
-  if (!message) return null
-  return <p className='mt-1 text-sm text-berry'>{message}</p>
-}
-
-FieldError.propTypes = {
-  message: PropTypes.string
-}
-
-const initialState = { ok: false, message: '', fieldErrors: {} }
+import { signIn } from 'next-auth/react'
+import { loginSchema } from '@/lib/schemas/auth'
 
 export default function LoginPage () {
   const router = useRouter()
-  const [state, action, pending] = useActionState(loginAction, initialState)
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [message, setMessage] = useState('')
+  const [pending, setPending] = useState(false)
 
-  useEffect(() => {
-    if (!state?.ok) return
+  async function handleSubmit (event) {
+    event.preventDefault()
+    setMessage('')
+    setFieldErrors({})
+
+    const formData = new FormData(event.currentTarget)
+    const parsed = loginSchema.safeParse({
+      email: formData.get('email'),
+      password: formData.get('password')
+    })
+
+    if (!parsed.success) {
+      const errors = {}
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0]
+        if (typeof key === 'string') errors[key] = issue.message
+      }
+      setFieldErrors(errors)
+      setMessage('Validation error')
+      return
+    }
+
+    setPending(true)
+    const result = await signIn('credentials', {
+      email: parsed.data.email,
+      password: parsed.data.password,
+      redirect: false
+    })
+    setPending(false)
+
+    if (result?.error) {
+      setMessage('Invalid email or password')
+      return
+    }
+
     router.push('/')
-  }, [router, state])
+    router.refresh()
+  }
 
   return (
     <main className='cafe-page flex min-h-[70dvh] items-center justify-center'>
@@ -43,7 +68,7 @@ export default function LoginPage () {
           </p>
         </div>
 
-        <form action={action} className='mt-8 space-y-5'>
+        <form className='mt-8 space-y-5' onSubmit={handleSubmit}>
           <div>
             <label className='cafe-label' htmlFor='email'>
               Email
@@ -56,7 +81,9 @@ export default function LoginPage () {
               autoComplete='email'
               required
             />
-            <FieldError message={state?.fieldErrors?.email} />
+            {fieldErrors.email && (
+              <p className='mt-1 text-sm text-berry'>{fieldErrors.email}</p>
+            )}
           </div>
 
           <div>
@@ -71,11 +98,13 @@ export default function LoginPage () {
               autoComplete='current-password'
               required
             />
-            <FieldError message={state?.fieldErrors?.password} />
+            {fieldErrors.password && (
+              <p className='mt-1 text-sm text-berry'>{fieldErrors.password}</p>
+            )}
           </div>
 
-          {state?.message && !state?.ok && (
-            <p className='cafe-alert-error'>{state.message}</p>
+          {message && (
+            <p className='cafe-alert-error'>{message}</p>
           )}
 
           <button className='cafe-btn-primary w-full' disabled={pending} type='submit'>

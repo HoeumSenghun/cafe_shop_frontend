@@ -1,19 +1,41 @@
 'use client'
 
-import { createOrderFromProductAction } from '@/actions/order-actions'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { clientApi } from '@/lib/client-api'
 
 export default function ProductOrderButton ({ productId, isAvailable }) {
+  const router = useRouter()
+  const [pending, setPending] = useState(false)
+
+  async function handleOrder () {
+    setPending(true)
+    const res = await clientApi('/orders', {
+      method: 'POST',
+      body: {
+        items: [{ productId: Number(productId), quantity: 1 }]
+      }
+    })
+    setPending(false)
+
+    if (!res.ok) {
+      alert(res.message || 'Could not create order')
+      return
+    }
+
+    const orderId = res.data?.id
+    router.push(orderId ? `/orders/me/${orderId}` : '/orders/me')
+    router.refresh()
+  }
+
   return (
-    <form action={createOrderFromProductAction}>
-      <input name='productId' type='hidden' value={String(productId)} />
-      <input name='quantity' type='hidden' value='1' />
-      <button
-        className='cafe-btn-primary w-full'
-        disabled={!isAvailable}
-        type='submit'
-      >
-        {isAvailable ? 'Order now' : 'Unavailable'}
-      </button>
-    </form>
+    <button
+      className='cafe-btn-primary w-full'
+      disabled={!isAvailable || pending}
+      type='button'
+      onClick={handleOrder}
+    >
+      {pending ? 'Ordering…' : isAvailable ? 'Order now' : 'Unavailable'}
+    </button>
   )
 }

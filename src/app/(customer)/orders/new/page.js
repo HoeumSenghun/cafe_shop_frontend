@@ -1,35 +1,81 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { createOrderAction } from '@/actions/order-actions'
-
-const initialState = { ok: false, message: '', data: null }
+import { useRouter } from 'next/navigation'
+import { clientApi } from '@/lib/client-api'
+import { createOrderFromProductSchema } from '@/lib/schemas/orders'
 
 export default function NewOrderPage () {
-  const [state, action, pending] = useActionState(createOrderAction, initialState)
+  const router = useRouter()
+  const [message, setMessage] = useState('')
+  const [ok, setOk] = useState(false)
+  const [pending, setPending] = useState(false)
+
+  async function handleSubmit (event) {
+    event.preventDefault()
+    setMessage('')
+    setOk(false)
+
+    const formData = new FormData(event.currentTarget)
+    const parsed = createOrderFromProductSchema.safeParse({
+      productId: formData.get('productId'),
+      quantity: formData.get('quantity')
+    })
+
+    if (!parsed.success) {
+      setMessage(parsed.error.issues[0]?.message || 'Validation error')
+      return
+    }
+
+    setPending(true)
+    const res = await clientApi('/orders', {
+      method: 'POST',
+      body: {
+        items: [
+          {
+            productId: parsed.data.productId,
+            quantity: parsed.data.quantity
+          }
+        ]
+      }
+    })
+    setPending(false)
+
+    if (!res.ok) {
+      setMessage(res.message)
+      return
+    }
+
+    setOk(true)
+    setMessage(res.message)
+    const orderId = res.data?.id
+    if (orderId) {
+      router.push(`/orders/me/${orderId}`)
+    }
+  }
 
   return (
-    <main className='mx-auto max-w-3xl px-4 py-8'>
-      <div className='flex items-center justify-between gap-4'>
-        <h1 className='text-2xl font-semibold'>Create order</h1>
-        <Link className='text-sm underline' href='/orders/me'>
+    <main className='cafe-page max-w-3xl'>
+      <div className='flex flex-wrap items-center justify-between gap-4'>
+        <h1 className='text-2xl sm:text-3xl'>Create order</h1>
+        <Link className='cafe-btn-secondary' href='/orders/me'>
           My orders
         </Link>
       </div>
 
-      <p className='mt-3 text-sm text-gray-700'>
-        Create an order by selecting a product and quantity.
+      <p className='mt-3 text-sm text-muted'>
+        Enter a product ID and quantity from the menu.
       </p>
 
-      <form action={action} className='mt-6 space-y-4'>
+      <form className='cafe-card mt-6 space-y-4 p-5' onSubmit={handleSubmit}>
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
           <div>
-            <label className='block text-sm font-medium' htmlFor='productId'>
+            <label className='cafe-label' htmlFor='productId'>
               Product ID
             </label>
             <input
-              className='mt-2 w-full rounded border px-3 py-2 text-sm'
+              className='cafe-input mt-2'
               id='productId'
               name='productId'
               placeholder='e.g. 1'
@@ -37,11 +83,11 @@ export default function NewOrderPage () {
             />
           </div>
           <div>
-            <label className='block text-sm font-medium' htmlFor='quantity'>
+            <label className='cafe-label' htmlFor='quantity'>
               Quantity
             </label>
             <input
-              className='mt-2 w-full rounded border px-3 py-2 text-sm'
+              className='cafe-input mt-2'
               defaultValue='1'
               id='quantity'
               min='1'
@@ -52,31 +98,14 @@ export default function NewOrderPage () {
           </div>
         </div>
 
-        {state?.message && (
-          <p className={`text-sm ${state.ok ? 'text-green-700' : 'text-red-600'}`}>
-            {state.message}
-          </p>
+        {message && (
+          <p className={ok ? 'cafe-alert-success' : 'cafe-alert-error'}>{message}</p>
         )}
 
-        {state?.data && state.ok && (
-          <p className='text-sm text-gray-700'>
-            Order created. View it in{' '}
-            <Link className='underline' href='/orders/me'>
-              My orders
-            </Link>
-            .
-          </p>
-        )}
-
-        <button
-          className='rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60'
-          disabled={pending}
-          type='submit'
-        >
+        <button className='cafe-btn-primary' disabled={pending} type='submit'>
           {pending ? 'Creating…' : 'Create order'}
         </button>
       </form>
     </main>
   )
 }
-

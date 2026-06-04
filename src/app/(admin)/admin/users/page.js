@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { loadAdminUsers } from '@/actions/admin-actions'
-import { toggleUserEnabledAction } from '@/actions/admin-actions'
 import CreateStaffForm from './create-staff-form'
+import ToggleUserButton from './toggle-user-button'
 
 export default async function AdminUsersPage () {
   const res = await loadAdminUsers()
@@ -27,17 +27,7 @@ export default async function AdminUsersPage () {
                   {u.email} · {String(u.role || '—')}
                 </div>
               </div>
-              <form action={toggleUserEnabledAction}>
-                <input name='userId' type='hidden' value={String(u.id)} />
-                <input
-                  name='enabled'
-                  type='hidden'
-                  value={u.enabled === false ? 'true' : 'false'}
-                />
-                <button className='rounded border px-3 py-1 text-sm' type='submit'>
-                  {u.enabled === false ? 'Enable' : 'Disable'}
-                </button>
-              </form>
+              <ToggleUserButton enabled={u.enabled} userId={u.id} />
             </li>
           ))}
           {users.length === 0 && (

@@ -2,9 +2,10 @@ import Link from 'next/link'
 import { ensureStaff } from '@/lib/auth-session'
 import { resolveSearchParams } from '@/lib/search-params'
 import { getOrderById } from '@/services/orders-service'
-import StaffOrderLive from '@/components/staff-order-live'
+import OrderDetailView from '@/components/order-detail-view'
+import OrderStaffActions from '@/components/order-staff-actions'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3
 
 export default async function StaffOrderDetailPage ({ params, searchParams }) {
   const { id } = await params
@@ -31,13 +32,21 @@ export default async function StaffOrderDetailPage ({ params, searchParams }) {
         ← Orders queue
       </Link>
 
+      <p className='mt-2 text-xs text-muted'>
+        Server data refreshes every 3s · use actions below to update
+      </p>
+
       {sp.payment === 'success' && (
         <div className='cafe-alert-success mt-4'>
           Payment recorded successfully.
         </div>
       )}
 
-      <StaffOrderLive initialOrder={order} orderId={order.id} />
+      <div className='mt-4'>
+        <OrderDetailView order={order} />
+      </div>
+
+      <OrderStaffActions currentStatus={order.status} orderId={order.id} />
     </main>
   )
 }

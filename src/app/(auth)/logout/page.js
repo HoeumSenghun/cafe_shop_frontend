@@ -1,25 +1,24 @@
-'use client'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { getToken } from 'next-auth/jwt'
+import { authOptions } from '@/lib/auth-options'
+import { revokeBackendTokens } from '@/lib/logout-server'
 
-import { useEffect, useRef } from 'react'
-import { logoutAction } from '@/actions/auth-actions'
+export const dynamic = 'force-dynamic'
 
-export default function LogoutPage () {
-  const formRef = useRef(null)
+export default async function LogoutPage () {
+  const headersList = await headers()
+  const token = await getToken({
+    req: {
+      headers: {
+        cookie: headersList.get('cookie') || ''
+      }
+    },
+    secret: authOptions.secret
+  })
 
-  useEffect(() => {
-    if (!formRef.current) return
-    formRef.current.requestSubmit()
-  }, [])
+  await revokeBackendTokens(token)
 
-  return (
-    <main className='mx-auto max-w-md px-4 py-12'>
-      <h1 className='text-xl font-semibold'>Logging out…</h1>
-      <form action={logoutAction} ref={formRef}>
-        <button className='sr-only' type='submit'>
-          Logout
-        </button>
-      </form>
-    </main>
-  )
+  const callback = encodeURIComponent('/login')
+  redirect(`/api/auth/signout?callbackUrl=${callback}`)
 }
-

@@ -1,0 +1,12 @@
+import { jsonError, jsonOk } from '@/lib/api-response'
+import { requireApiRole } from '@/lib/api-auth'
+import { getAdminDashboard } from '@/services/admin-service'
+
+export async function GET () {
+  const auth = await requireApiRole(['ADMIN'])
+  if (auth.error) return auth.error
+
+  const res = await getAdminDashboard({ accessToken: auth.accessToken })
+  if (!res.ok) return jsonError(res.message, res.status || 500)
+  return jsonOk(res.data, res.message)
+}

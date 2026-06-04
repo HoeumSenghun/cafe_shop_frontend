@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { getProductById } from '@/services/products-service'
-import { createOrderFromProductAction } from '@/actions/order-actions'
 import { formatMoney } from '@/lib/format'
 import PageHeader from '@/components/ui/page-header'
+import ProductOrderForm from '@/components/product-order-form'
 
 export default async function ProductDetailPage ({ params }) {
   const { id } = await params
@@ -55,32 +55,7 @@ export default async function ProductDetailPage ({ params }) {
         <p className='mt-1 text-sm text-muted'>
           Choose quantity and add to your order.
         </p>
-        <form
-          action={createOrderFromProductAction}
-          className='mt-5 flex flex-col gap-4 sm:flex-row sm:items-end'
-        >
-          <input name='productId' type='hidden' value={String(p.id)} />
-          <div className='flex-1 sm:max-w-[8rem]'>
-            <label className='cafe-label' htmlFor='quantity'>
-              Quantity
-            </label>
-            <input
-              className='cafe-input mt-2'
-              defaultValue='1'
-              id='quantity'
-              min='1'
-              name='quantity'
-              type='number'
-            />
-          </div>
-          <button
-            className='cafe-btn-primary w-full sm:w-auto'
-            disabled={!isAvailable}
-            type='submit'
-          >
-            Order now
-          </button>
-        </form>
+        <ProductOrderForm isAvailable={isAvailable} productId={p.id} />
       </section>
     </main>
   )

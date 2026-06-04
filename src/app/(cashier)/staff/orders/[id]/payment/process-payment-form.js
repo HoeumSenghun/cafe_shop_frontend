@@ -1,23 +1,46 @@
 'use client'
 
-import { useActionState } from 'react'
-import { processPaymentAction } from '@/actions/staff-actions'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { clientApi } from '@/lib/client-api'
 import { formatMoney, PAYMENT_METHODS } from '@/lib/format'
 
-const initialState = { ok: false, message: '' }
-
 export default function ProcessPaymentForm ({ orderId, totalAmount }) {
-  const [state, action, pending] = useActionState(processPaymentAction, initialState)
+  const router = useRouter()
+  const [pending, setPending] = useState(false)
+  const [message, setMessage] = useState('')
+
+  async function handleSubmit (event) {
+    event.preventDefault()
+    setMessage('')
+    setPending(true)
+
+    const formData = new FormData(event.currentTarget)
+    const res = await clientApi('/payments', {
+      method: 'POST',
+      body: {
+        orderId: Number(formData.get('orderId')),
+        amount: Number(formData.get('amount')),
+        method: String(formData.get('method'))
+      }
+    })
+    setPending(false)
+
+    if (!res.ok) {
+      setMessage(res.message)
+      return
+    }
+
+    router.push(`/staff/orders/${orderId}?payment=success`)
+    router.refresh()
+  }
 
   return (
-    <form action={action} className='cafe-panel-green mt-6 space-y-4'>
+    <form action='#' className='cafe-panel-green mt-6 space-y-4' onSubmit={handleSubmit}>
       <h2 className='font-display text-lg'>Record payment</h2>
-      <p className='text-sm text-muted'>
-        Order is PAID — enter cash, card, or KHQR.
-      </p>
+      <p className='text-sm text-muted'>Order is PAID — enter cash, card, or KHQR.</p>
 
       <input name='orderId' type='hidden' value={String(orderId)} />
-      <input name='markPaid' type='hidden' value='false' />
 
       <div>
         <label className='cafe-label' htmlFor='amount'>
@@ -35,9 +58,7 @@ export default function ProcessPaymentForm ({ orderId, totalAmount }) {
           type='number'
         />
         {totalAmount != null && (
-          <p className='mt-1 text-xs text-muted'>
-            Order total: ${formatMoney(totalAmount)}
-          </p>
+          <p className='mt-1 text-xs text-muted'>Order total: ${formatMoney(totalAmount)}</p>
         )}
       </div>
 
@@ -54,9 +75,7 @@ export default function ProcessPaymentForm ({ orderId, totalAmount }) {
         </select>
       </div>
 
-      {state?.message && (
-        <p className='cafe-alert-error'>{state.message}</p>
-      )}
+      {message && <p className='cafe-alert-error'>{message}</p>}
 
       <button className='cafe-btn-primary w-full' disabled={pending} type='submit'>
         {pending ? 'Processing…' : 'Confirm payment'}

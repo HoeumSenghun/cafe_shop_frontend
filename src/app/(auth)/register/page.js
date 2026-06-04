@@ -1,30 +1,70 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import PropTypes from 'prop-types'
-import { registerAction } from '@/actions/auth-actions'
-
-function FieldError ({ message }) {
-  if (!message) return null
-  return <p className='mt-1 text-sm text-berry'>{message}</p>
-}
-
-FieldError.propTypes = {
-  message: PropTypes.string
-}
-
-const initialState = { ok: false, message: '', fieldErrors: {} }
+import { signIn } from 'next-auth/react'
+import { registerSchema } from '@/lib/schemas/auth'
+import { clientApi } from '@/lib/client-api'
 
 export default function RegisterPage () {
   const router = useRouter()
-  const [state, action, pending] = useActionState(registerAction, initialState)
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [message, setMessage] = useState('')
+  const [pending, setPending] = useState(false)
 
-  useEffect(() => {
-    if (!state?.ok) return
+  async function handleSubmit (event) {
+    event.preventDefault()
+    setMessage('')
+    setFieldErrors({})
+
+    const formData = new FormData(event.currentTarget)
+    const parsed = registerSchema.safeParse({
+      email: formData.get('email'),
+      fullName: formData.get('fullName'),
+      password: formData.get('password')
+    })
+
+    if (!parsed.success) {
+      const errors = {}
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0]
+        if (typeof key === 'string') errors[key] = issue.message
+      }
+      setFieldErrors(errors)
+      setMessage('Validation error')
+      return
+    }
+
+    setPending(true)
+    const res = await clientApi('/auth/register', {
+      method: 'POST',
+      body: parsed.data
+    })
+
+    if (!res.ok) {
+      setPending(false)
+      setMessage(res.message || 'Registration failed')
+      if (res.fieldErrors) setFieldErrors(res.fieldErrors)
+      return
+    }
+
+    const signInResult = await signIn('credentials', {
+      email: parsed.data.email,
+      password: parsed.data.password,
+      redirect: false
+    })
+    setPending(false)
+
+    if (signInResult?.error) {
+      setMessage('Account created — please sign in.')
+      router.push('/login')
+      return
+    }
+
     router.push('/')
-  }, [router, state])
+    router.refresh()
+  }
 
   return (
     <main className='cafe-page flex min-h-[70dvh] items-center justify-center'>
@@ -43,35 +83,25 @@ export default function RegisterPage () {
           </p>
         </div>
 
-        <form action={action} className='mt-8 space-y-5'>
+        <form className='mt-8 space-y-5' onSubmit={handleSubmit}>
           <div>
             <label className='cafe-label' htmlFor='email'>
               Email
             </label>
-            <input
-              className='cafe-input mt-2'
-              id='email'
-              name='email'
-              type='email'
-              autoComplete='email'
-              required
-            />
-            <FieldError message={state?.fieldErrors?.email} />
+            <input className='cafe-input mt-2' id='email' name='email' type='email' required />
+            {fieldErrors.email && (
+              <p className='mt-1 text-sm text-berry'>{fieldErrors.email}</p>
+            )}
           </div>
 
           <div>
             <label className='cafe-label' htmlFor='fullName'>
               Full name
             </label>
-            <input
-              className='cafe-input mt-2'
-              id='fullName'
-              name='fullName'
-              type='text'
-              autoComplete='name'
-              required
-            />
-            <FieldError message={state?.fieldErrors?.fullName} />
+            <input className='cafe-input mt-2' id='fullName' name='fullName' type='text' required />
+            {fieldErrors.fullName && (
+              <p className='mt-1 text-sm text-berry'>{fieldErrors.fullName}</p>
+            )}
           </div>
 
           <div>
@@ -83,16 +113,17 @@ export default function RegisterPage () {
               id='password'
               name='password'
               type='password'
-              autoComplete='new-password'
-              required
               minLength={8}
               maxLength={72}
+              required
             />
-            <FieldError message={state?.fieldErrors?.password} />
+            {fieldErrors.password && (
+              <p className='mt-1 text-sm text-berry'>{fieldErrors.password}</p>
+            )}
           </div>
 
-          {state?.message && !state?.ok && (
-            <p className='cafe-alert-error'>{state.message}</p>
+          {message && (
+            <p className='cafe-alert-error'>{message}</p>
           )}
 
           <button className='cafe-btn-primary w-full' disabled={pending} type='submit'>

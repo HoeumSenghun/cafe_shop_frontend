@@ -2,6 +2,7 @@ import './globals.css'
 
 import { Fraunces, DM_Sans } from 'next/font/google'
 import SiteHeader from '@/components/site-header'
+import AppProviders from '@/components/providers/app-providers'
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -31,10 +32,12 @@ export default function RootLayout ({ children }) {
   return (
     <html className={`${fraunces.variable} ${dmSans.variable}`} lang='en'>
       <body>
-        <SiteHeader />
-        <div className='relative min-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-4rem)]'>
-          {children}
-        </div>
+        <AppProviders>
+          <SiteHeader />
+          <div className='relative min-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-4rem)]'>
+            {children}
+          </div>
+        </AppProviders>
       </body>
     </html>
   )
