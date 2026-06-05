@@ -8,20 +8,27 @@ import { logoutUser, refreshTokens } from '@/services/auth-service'
 
 const LEGACY_ACCESS = 'cafe_access'
 const LEGACY_REFRESH = 'cafe_refresh'
-const COOKIE_SUFFIXES = ['session-token', 'callback-url', 'csrf-token']
 
 function normalizeRoles (accessToken) {
   const roles = getJwtRolesServer(accessToken)
   return roles.map((r) => String(r).replace(/^ROLE_/, ''))
 }
 
-/** Same rule as authOptions.useSecureCookies — must match or login “works” but session is missing. */
-export function isSecureAuthCookies () {
-  return (process.env.NEXTAUTH_URL || '').startsWith('https://')
+async function requestHost () {
+  const h = await headers()
+  return (h.get('x-forwarded-host') || h.get('host') || '').split(':')[0].toLowerCase()
 }
 
-export async function useSecureNextAuthCookies () {
-  if (isSecureAuthCookies()) return true
+function isLocalhostHost (host) {
+  return host === 'localhost' || host === '127.0.0.1' || host === '[::1]'
+}
+
+/** True only on HTTPS requests (e.g. Vercel). Never true on localhost. */
+export async function isRequestSecure () {
+  const host = await requestHost()
+  if (isLocalhostHost(host)) {
+    return false
+  }
 
   const h = await headers()
   const forwarded = h.get('x-forwarded-proto')
@@ -32,19 +39,23 @@ export async function useSecureNextAuthCookies () {
   return false
 }
 
-function cookieName (suffix, useSecure) {
-  const base = `next-auth.${suffix}`
-  return useSecure ? `__Secure-${base}` : base
+function sessionCookieName (useSecure) {
+  return useSecure
+    ? '__Secure-next-auth.session-token'
+    : 'next-auth.session-token'
 }
 
 async function cookieNamesToClear () {
-  const useSecure = await useSecureNextAuthCookies()
-  const names = COOKIE_SUFFIXES.map((s) => cookieName(s, useSecure))
+  const useSecure = await isRequestSecure()
+
   if (useSecure) {
-    const legacy = COOKIE_SUFFIXES.map((s) => cookieName(s, false))
-    return [...new Set([...names, ...legacy])]
+    return [
+      '__Secure-next-auth.session-token',
+      'next-auth.session-token'
+    ]
   }
-  return names
+
+  return ['next-auth.session-token']
 }
 
 export async function establishCredentialsSession ({
@@ -54,8 +65,8 @@ export async function establishCredentialsSession ({
   expiresInSeconds = 3600
 }) {
   const maxAge = authOptions.session?.maxAge ?? 30 * 24 * 60 * 60
-  const useSecure = await useSecureNextAuthCookies()
-  const name = cookieName('session-token', useSecure)
+  const useSecure = await isRequestSecure()
+  const name = sessionCookieName(useSecure)
 
   const sessionToken = await encode({
     token: {

@@ -1,11 +1,6 @@
 'use client'
 
-import { SessionProvider } from 'next-auth/react'
-
+/** Auth is server-only (getServerSession). No SessionProvider — avoids extra NextAuth cookies on logout. */
 export default function AppProviders ({ children }) {
-  return (
-    <SessionProvider refetchInterval={60} refetchOnWindowFocus>
-      {children}
-    </SessionProvider>
-  )
+  return children
 }

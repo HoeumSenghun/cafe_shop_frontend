@@ -2,13 +2,14 @@ import 'server-only'
 
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { jsonError } from '@/lib/api-response'
-import { useSecureNextAuthCookies } from '@/lib/auth-server'
+import { isRequestSecure } from '@/lib/auth-server'
+import { getAuthJwtToken, tokenToSession } from '@/lib/auth-token'
 
 export async function getSession () {
-  const session = await getServerSession(authOptions)
+  const token = await getAuthJwtToken()
+  const session = tokenToSession(token)
   const roles = session?.roles || []
 
   return {
@@ -24,7 +25,7 @@ export async function getSession () {
 }
 
 export async function ensureAccessToken () {
-  const session = await getServerSession(authOptions)
+  const session = tokenToSession(await getAuthJwtToken())
 
   if (!session?.accessToken) {
     return { ok: false, message: 'Not authenticated' }
@@ -61,7 +62,7 @@ export async function ensureCustomer () {
 }
 
 export async function requireApiAuth () {
-  const session = await getServerSession(authOptions)
+  const session = tokenToSession(await getAuthJwtToken())
   if (!session?.accessToken) {
     return { error: jsonError('Unauthorized', 401) }
   }
@@ -87,13 +88,12 @@ export async function requireApiRole (roles) {
   return auth
 }
 
-/** Read JWT from cookie for logout (server action). */
 export async function getSessionTokenForLogout () {
   const { getToken } = await import('next-auth/jwt')
   const headersList = await headers()
   return getToken({
     req: { headers: { cookie: headersList.get('cookie') || '' } },
     secret: authOptions.secret,
-    secureCookie: await useSecureNextAuthCookies()
+    secureCookie: await isRequestSecure()
   })
 }

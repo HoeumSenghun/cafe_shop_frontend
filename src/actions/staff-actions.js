@@ -170,16 +170,6 @@ export async function processPaymentAction (prevState, formData) {
   redirect(`/staff/orders/${orderId}?payment=success`)
 }
 
-export async function createPaymentAction (prevState, formData) {
-  const resolved = resolveFormData(prevState, formData)
-  if (!resolved) return { ok: false, message: 'Invalid form submission' }
-
-  const orderId = String(resolved.get('orderId') || '').trim()
-  if (!orderId) return { ok: false, message: 'orderId is required' }
-
-  redirect(`/staff/orders/${encodeURIComponent(orderId)}/payment`)
-}
-
 export async function getPaymentByOrderIdAction (prevState, formData) {
   const resolved = resolveFormData(prevState, formData)
   if (!resolved) return { ok: false, message: 'Invalid form submission' }

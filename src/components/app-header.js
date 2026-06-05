@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 function closeMobileMenu (event) {
-  event.currentTarget.closest('details')?.removeAttribute('open')
+  event.currentTarget.closest('.cafe-mobile-menu')?.removeAttribute('open')
 }
 
 function NavLink ({ href, children, onNavigate }) {

@@ -18,13 +18,5 @@ export async function POST (request) {
   const res = await registerUser(parsed.data)
   if (!res.ok) return jsonError(res.message, res.status || 400)
 
-  return jsonOk(
-    {
-      accessToken: res.data.accessToken,
-      refreshToken: res.data.refreshToken,
-      expiresInSeconds: res.data.expiresInSeconds
-    },
-    res.message,
-    201
-  )
+  return jsonOk({ email: parsed.data.email }, res.message, 201)
 }

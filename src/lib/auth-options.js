@@ -2,7 +2,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { loginSchema } from '@/lib/schemas/auth'
 import { getJwtRolesServer } from '@/lib/jwt-server'
 import { loginUser, refreshTokens } from '@/services/auth-service'
-import { isSecureAuthCookies, revokeBackendTokens } from '@/lib/auth-server'
+import { revokeBackendTokens } from '@/lib/auth-server'
 
 function normalizeRoles (accessToken) {
   const roles = getJwtRolesServer(accessToken)
@@ -31,7 +31,8 @@ async function refreshAccessToken (token) {
 }
 
 export const authOptions = {
-  useSecureCookies: isSecureAuthCookies(),
+  // We set/read the session cookie ourselves — avoids NextAuth csrf/callback __Secure- cookies
+  useSecureCookies: false,
   providers: [
     CredentialsProvider({
       id: 'credentials',
@@ -92,7 +93,6 @@ export const authOptions = {
         session.error = 'RefreshTokenError'
       }
 
-      session.accessToken = token.accessToken
       session.roles = token.roles || []
       session.user = {
         ...session.user,
